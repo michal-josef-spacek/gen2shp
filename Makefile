@@ -1,5 +1,8 @@
 # $Log: Makefile,v $
-# Revision 1.3  1999/09/16 08:45:32  jwagner
+# Revision 1.4  1999/11/05 08:02:48  jwagner
+# added comment for compiling under MS VC
+#
+# Revision 1.3  1999/09/16  08:45:32  jwagner
 # new shapelib revision
 #
 # Revision 1.2  1999/04/22 15:33:31  jwagner
@@ -12,6 +15,7 @@
 SHAPELIBPATH=/home/fkoorman/jfb/src/shapelib-1.2.5
 
 CC=gcc
+# add -DWITH_STRICMP if you are compiling i.e. with MS VC
 CFLAGS=-I$(SHAPELIBPATH) # -DDEBUG
 
 all: gen2shp
