@@ -1,7 +1,7 @@
 /* 
- * $Id: gen2shp.c,v 1.8 2000/06/12 13:23:35 jan Exp $
+ * $Id: gen2shp.c,v 1.9 2002/01/24 08:24:56 jan Exp $
  *
- * Copyright (C) 1999 by Jan-Oliver Wagner <jan@intevation.de>
+ * Copyright (C) 1999-2002 by Jan-Oliver Wagner <jan@intevation.de>
  * 
  *    This program is free software; you can redistribute it and/or
  *   modify it under the terms of the GNU General Public License
@@ -25,7 +25,7 @@
 
 #include "utils.h"
 
-#define VERSION "0.3.0"
+#define VERSION "0.3.1-cvs"
 
 #ifdef DEBUG
 #define DEBUG_OUT(str) fprintf(stderr, "gen2shp debug: " str)
@@ -76,7 +76,7 @@
 void print_version(FILE *file)
 {
 	fprintf(file,"gen2shp version " VERSION "\n"); 
-	fprintf(file,"Copyright (C) 1999 by Jan-Oliver Wagner.\n"
+	fprintf(file,"Copyright (C) 1999-2002 by Jan-Oliver Wagner.\n"
 		"The GNU GENERAL PUBLIC LICENSE applies. "
 		"Absolutly No Warranty!\n");
 #ifdef DEBUG
@@ -245,6 +245,37 @@ static void GeneratePoints (	FILE *fp,
 	}
 }
 
+/* parse a coordinate pair from a string */
+static void GetCoordinatePair(
+	int id,			/* ID of object */
+	char * linebuf,	/* should contain the coordinate pair */
+	double * x,		/* output x */
+	double * y		/* output y */
+	) {
+	char * str;		/* tmp variable needed for assertions */
+	char * dstr;	/* tmp variable needed to find out substrings */
+
+	if ((str = strtok(linebuf, " ,")) == NULL) {
+		fprintf(stderr, "format error for object with "
+			"id=%d\n", id);
+		exit(ERR_FORMAT);
+	}
+	dstr = (char *)strchr((const char *)str, (char)'D');
+	if (dstr) *dstr = 'E';
+		*x = atof((const char *)str);
+
+	if ((str = strtok(NULL, " ,")) == NULL) {
+		fprintf(stderr, "format error for object with "
+			"id=%d\n", id);
+		exit(ERR_FORMAT);
+	}
+	dstr = (char *)strchr((const char *)str, (char)'D');
+	if (dstr) *dstr = 'E';
+		*y = atof((const char *)str);
+
+	DEBUG_OUT2("x=%f, y=%f\n", *x, *y);
+}
+
 /* read from fp and generate line/arc shapefile to hDBF/hSHP */
 static void GenerateLines (	FILE *fp,
 				DBFHandle hDBF,
@@ -280,7 +311,7 @@ static void GenerateLines (	FILE *fp,
 				break;
 			}
 
-			/* allocate coordinate vectors if to small */
+			/* allocate coordinate vectors if too small */
 			if (vector_size <= coord) {
 				vector_size += COORDS_BLOCKSIZE;
 				x = realloc(x, vector_size * sizeof(double));
@@ -291,25 +322,7 @@ static void GenerateLines (	FILE *fp,
 				}
 			}
 
-			if ((str = strtok(linebuf, " ,")) == NULL) {
-				fprintf(stderr, "format error for line with "
-					"id=%d\n", id);
-				exit(ERR_FORMAT);
-			}
-			dstr = (char *)strchr((const char *)str, (char)'D');
-			if (dstr) *dstr = 'E';
-			x[coord] = atof((const char *)str);
-
-			if ((str = strtok(NULL, " ,")) == NULL) {
-				fprintf(stderr, "format error for line with "
-					"id=%d\n", id);
-				exit(ERR_FORMAT);
-			}
-			dstr = (char *)strchr((const char *)str, (char)'D');
-			if (dstr) *dstr = 'E';
-			y[coord] = atof((const char *)str);
-
-			DEBUG_OUT2("x=%f, y=%f\n", x[coord], y[coord]);
+			GetCoordinatePair(id, linebuf, &x[coord], &y[coord]);
 
 			coord ++;
 		}
@@ -328,13 +341,12 @@ static void GeneratePolygons (	FILE *fp,
 				SHPHandle hSHP ) {
 	char linebuf[STR_BUFFER_SIZE];	/* buffer for line-wise reading from file */
 	int id = -1;			/* ID of polygon */
+	int new_id;		/* tmp for checking id */
 	double	* x = NULL,
 		* y = NULL;	/* coordinates arrays */
 	int vector_size = 0;	/* current size of the vectors x and y */
 	int nparts = 0; /* number of parts */
 	int * partstarts = NULL; /* indices where new parts start in x[],y[] */
-	char * str;		/* tmp variable needed for assertions */
-	char * dstr;		/* tmp variable needed to find out substrings */
 	int rec = 0;		/* Counter for records */
 	int coord = 0;		/* Counter for coordinates */
 
@@ -346,21 +358,35 @@ static void GeneratePolygons (	FILE *fp,
 		}
 
 		if (strchr(linebuf,',') == NULL) {
-				/* we assume we found an id */
-				if (id != -1) {
-						/* now its time to create the last read object */
-						WriteDbf(hDBF, rec, id);
-						if (partstarts) partstarts[0] = 0;
-						WritePolygon(hSHP, rec, coord, x, y, (nparts > 0 ? nparts+1 : 0), partstarts);
-						free(partstarts); partstarts = NULL;
-						rec ++;
-				}
-				/* IDs are on a single line */
-				id = atoi((const char *)linebuf);
+			/* we assume we found an id */
+			if (id != -1) {
+				/* now its time to create the last read object */
+				WriteDbf(hDBF, rec, id);
+				if (partstarts) partstarts[0] = 0;
+				WritePolygon(hSHP, rec, coord, x, y,
+					(nparts > 0 ? nparts+1 : 0), partstarts);
+				free(partstarts); partstarts = NULL;
+				rec ++;
+			}
+			/* IDs are on a single line */
+			new_id = atoi((const char *)linebuf);
+			if (new_id == -99999) {
+				/* this ID is a special one.
+				 * it introduces a hole in the previous
+				 * polygon.
+				 */
+				DEBUG_OUT1("special id=%d found\n", new_id);
+			} else {
+				id = new_id;
 				coord = 0;
 				nparts = 0;
 				DEBUG_OUT1("id=%d\n", id);
+			}
 		} else {
+				/* assume we found a coordinate pair.
+				 * This basically means we are supposed to
+				 * add this one and the following coordinates
+				 * the the previous polygon as an additional 'part'. */
 				if (coord == 0) {
 						DEBUG_OUT("no id for coordinates!");
 						exit(ERR_FORMAT);
@@ -378,7 +404,7 @@ static void GeneratePolygons (	FILE *fp,
 			 * construct below. Should find a more elegant solution!
 			 * ---------
 			 */
-			/* allocate coordinate vectors if to small */
+			/* allocate coordinate vectors if too small */
 			if (vector_size <= coord) {
 				vector_size += COORDS_BLOCKSIZE;
 				x = realloc(x, vector_size * sizeof(double));
@@ -389,24 +415,7 @@ static void GeneratePolygons (	FILE *fp,
 				}
 			}
 
-			if ((str = strtok(linebuf, " ,")) == NULL) {
-				fprintf(stderr, "format error for polygon with "
-					"id=%d\n", id);
-				exit(ERR_FORMAT);
-			}
-			dstr = (char *)strchr((const char *)str, (char)'D');
-			if (dstr) *dstr = 'E';
-			x[coord] = atof((const char *)str);
-
-			if ((str = strtok(NULL, " ,")) == NULL) {
-				fprintf(stderr, "format error for polygon with "
-					"id=%d\n", id);
-				exit(ERR_FORMAT);
-			}
-			dstr = (char *)strchr((const char *)str, (char)'D');
-			if (dstr) *dstr = 'E';
-			y[coord] = atof((const char *)str);
-			DEBUG_OUT2("x=%f, y=%f\n", x[coord], y[coord]);
+			GetCoordinatePair(id, linebuf, &x[coord], &y[coord]);
 
 			coord ++;
 			/* ---------- end of copy */
@@ -419,7 +428,7 @@ static void GeneratePolygons (	FILE *fp,
 				break;
 			}
 
-			/* allocate coordinate vectors if to small */
+			/* allocate coordinate vectors if too small */
 			if (vector_size <= coord) {
 				vector_size += COORDS_BLOCKSIZE;
 				x = realloc(x, vector_size * sizeof(double));
@@ -430,24 +439,7 @@ static void GeneratePolygons (	FILE *fp,
 				}
 			}
 
-			if ((str = strtok(linebuf, " ,")) == NULL) {
-				fprintf(stderr, "format error for polygon with "
-					"id=%d\n", id);
-				exit(ERR_FORMAT);
-			}
-			dstr = (char *)strchr((const char *)str, (char)'D');
-			if (dstr) *dstr = 'E';
-			x[coord] = atof((const char *)str);
-
-			if ((str = strtok(NULL, " ,")) == NULL) {
-				fprintf(stderr, "format error for polygon with "
-					"id=%d\n", id);
-				exit(ERR_FORMAT);
-			}
-			dstr = (char *)strchr((const char *)str, (char)'D');
-			if (dstr) *dstr = 'E';
-			y[coord] = atof((const char *)str);
-			DEBUG_OUT2("x=%f, y=%f\n", x[coord], y[coord]);
+			GetCoordinatePair(id, linebuf, &x[coord], &y[coord]);
 
 			coord ++;
 		}
