@@ -1,7 +1,7 @@
-/* Jan-Oliver Wagner	$Date: 2000/03/13 13:59:40 $
- * $Id: gen2shp.c,v 1.7 2000/03/13 13:59:40 jwagner Exp $
+/* 
+ * $Id: gen2shp.c,v 1.8 2000/06/12 13:23:35 jan Exp $
  *
- * Copyright (C) 1999 by Jan-Oliver Wagner
+ * Copyright (C) 1999 by Jan-Oliver Wagner <jan@intevation.de>
  * 
  *    This program is free software; you can redistribute it and/or
  *   modify it under the terms of the GNU General Public License
@@ -17,40 +17,27 @@
  *   along with this program; if not, write to the Free Software
  *   Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Log: gen2shp.c,v $
- * Revision 1.7  2000/03/13 13:59:40  jwagner
- * replaced index() by strchr().
- *
- * Revision 1.6  2000/03/13  12:58:53  jwagner
- * Now recognizes "D" for "E" as well in the exponential representation.
- * Now accepts "," and " " as delimeters. Sequences of delimeters are
- * treated as one delimeter.
- *
- * Revision 1.5  1999/11/05  08:02:40  jwagner
- * Added CASE_INSENSITIVE_STR_CMP
- *
- * Revision 1.4  1999/11/05  07:13:31  jwagner
- * test for "end" now case-insensitive.
- *
- * Revision 1.3  1999/09/16  08:44:57  jwagner
- * Just a typo and new revision.
- *
- * Revision 1.2  1999/04/22 15:30:25  jwagner
- * Added further geodata types: lines and polygons.
- * Rearrangement of procedures, some facelifting for readability.
- *
- * Revision 1.1  1999/04/21  16:01:31  jwagner
- * Initial revision
- *
  */
 
 #include <string.h>
 
-#include <shapefil.h>	/* from shapelib */
+#include <libshp/shapefil.h>
 
 #include "utils.h"
 
-#define VERSION "0.2.3 (RCS-$Revision: 1.7 $)"
+#define VERSION "0.3.0"
+
+#ifdef DEBUG
+#define DEBUG_OUT(str) fprintf(stderr, "gen2shp debug: " str)
+#define DEBUG_OUT1(str,v) fprintf(stderr, "gen2shp debug: " str, v)
+#define DEBUG_OUT2(str,v,w) fprintf(stderr, "gen2shp debug: " str, v, w)
+#define DEBUG_OUT3(str,v,w,x) fprintf(stderr, "gen2shp debug: " str, v, w, x)
+#else
+#define DEBUG_OUT(str) 
+#define DEBUG_OUT1(str,v) 
+#define DEBUG_OUT2(str,v,w) 
+#define DEBUG_OUT3(str,v,w,x) 
+#endif
 
 /* Error codes for exit() routine: */
 #define	ERR_USAGE	1
@@ -197,10 +184,16 @@ static void WritePolygon(	SHPHandle hSHP,
 				int rec,
 				int coords,
 				double * x,
-				double * y ) {
+				double * y,
+				int nparts,
+				int * partstarts) {
 	SHPObject	*psShape;
 
-	psShape = SHPCreateObject( SHPT_POLYGON, rec, 0, NULL, NULL,
+DEBUG_OUT1("WritePolygon: rec = %d\n", rec);
+DEBUG_OUT1("WritePolygon: nparts = %d\n", nparts);
+DEBUG_OUT1("WritePolygon: coords = %d\n", coords);
+
+	psShape = SHPCreateObject( SHPT_POLYGON, rec, nparts, partstarts, NULL,
 		coords, x, y, NULL, NULL );
 	SHPWriteObject( hSHP, -1, psShape );
 	SHPDestroyObject( psShape );
@@ -219,9 +212,7 @@ static void GeneratePoints (	FILE *fp,
 
 	while (getline(fp, linebuf) != EOF) {
 		if (CASE_INSENSITIVE_STR_CMP(linebuf, "end") == 0) {
-#ifdef DEBUG
-			fprintf(stderr, "debug output: 'end' detected\n");
-#endif
+			DEBUG_OUT("'end' detected\n");
 			break;
 		}
 		if ((str = strtok(linebuf, " ,")) == NULL) {
@@ -246,9 +237,7 @@ static void GeneratePoints (	FILE *fp,
 		if (dstr) *dstr = 'E';
 		y = atof((const char *)str);
 
-#ifdef DEBUG
-		fprintf(stderr, "debug output: id=%d, x=%f, y=%f\n", id, x, y);
-#endif
+		DEBUG_OUT3("id=%d, x=%f, y=%f\n", id, x, y);
 
 		WriteDbf(hDBF, rec, id);
 		WritePoint(hSHP, rec, x, y);
@@ -273,28 +262,21 @@ static void GenerateLines (	FILE *fp,
 	/* loop lines */
 	while (getline(fp, linebuf) != EOF) {
 		if (CASE_INSENSITIVE_STR_CMP(linebuf, "end") == 0) {
-#ifdef DEBUG
-			fprintf(stderr, "debug output: final 'end' detected\n");
-#endif
+			DEBUG_OUT("final 'end' detected\n");
 			break;
 		}
 
 		/* IDs are in single lines */
 		id = atoi((const char *)linebuf);
 
-#ifdef DEBUG
-		fprintf(stderr, "debug output: id=%d\n", id);
-#endif
+		DEBUG_OUT1("id=%d\n", id);
 
 		coord = 0;
 
 		/* loop coordinates of line 'id' */
 		while (getline(fp, linebuf) != EOF) {
 			if (CASE_INSENSITIVE_STR_CMP(linebuf, "end") == 0) {
-#ifdef DEBUG
-				fprintf(stderr, "debug output: a lines "
-					"'end' detected\n");
-#endif
+				DEBUG_OUT("a lines 'end' detected\n");
 				break;
 			}
 
@@ -327,10 +309,7 @@ static void GenerateLines (	FILE *fp,
 			if (dstr) *dstr = 'E';
 			y[coord] = atof((const char *)str);
 
-#ifdef DEBUG
-			fprintf(stderr, "debug output: x=%f, y=%f\n",
-				x[coord], y[coord]);
-#endif
+			DEBUG_OUT2("x=%f, y=%f\n", x[coord], y[coord]);
 
 			coord ++;
 		}
@@ -348,10 +327,12 @@ static void GeneratePolygons (	FILE *fp,
 				DBFHandle hDBF,
 				SHPHandle hSHP ) {
 	char linebuf[STR_BUFFER_SIZE];	/* buffer for line-wise reading from file */
-	int id;			/* ID of point */
+	int id = -1;			/* ID of polygon */
 	double	* x = NULL,
 		* y = NULL;	/* coordinates arrays */
 	int vector_size = 0;	/* current size of the vectors x and y */
+	int nparts = 0; /* number of parts */
+	int * partstarts = NULL; /* indices where new parts start in x[],y[] */
 	char * str;		/* tmp variable needed for assertions */
 	char * dstr;		/* tmp variable needed to find out substrings */
 	int rec = 0;		/* Counter for records */
@@ -360,28 +341,81 @@ static void GeneratePolygons (	FILE *fp,
 	/* loop polygons */
 	while (getline(fp, linebuf) != EOF) {
 		if (CASE_INSENSITIVE_STR_CMP(linebuf, "end") == 0) {
-#ifdef DEBUG
-			fprintf(stderr, "debug output: final 'end' detected\n");
-#endif
+			DEBUG_OUT("final 'end' detected\n");
 			break;
 		}
 
-		/* IDs are in single lines */
-		id = atoi((const char *)linebuf);
+		if (strchr(linebuf,',') == NULL) {
+				/* we assume we found an id */
+				if (id != -1) {
+						/* now its time to create the last read object */
+						WriteDbf(hDBF, rec, id);
+						if (partstarts) partstarts[0] = 0;
+						WritePolygon(hSHP, rec, coord, x, y, (nparts > 0 ? nparts+1 : 0), partstarts);
+						free(partstarts); partstarts = NULL;
+						rec ++;
+				}
+				/* IDs are on a single line */
+				id = atoi((const char *)linebuf);
+				coord = 0;
+				nparts = 0;
+				DEBUG_OUT1("id=%d\n", id);
+		} else {
+				if (coord == 0) {
+						DEBUG_OUT("no id for coordinates!");
+						exit(ERR_FORMAT);
+				}
+				nparts ++;	/* a new part starts */
+				partstarts = realloc(partstarts, sizeof(int) * (nparts+1));
+				if (partstarts == NULL) {
+					fprintf(stderr, "memory allocation failed\n");
+					exit(ERR_ALLOC);
+				}
+				partstarts[nparts] = coord;
+				DEBUG_OUT1("newpart at %d\n", coord);
 
-#ifdef DEBUG
-		fprintf(stderr, "debug output: id=%d\n", id);
-#endif
+			/* the following block is just a copy from the while
+			 * construct below. Should find a more elegant solution!
+			 * ---------
+			 */
+			/* allocate coordinate vectors if to small */
+			if (vector_size <= coord) {
+				vector_size += COORDS_BLOCKSIZE;
+				x = realloc(x, vector_size * sizeof(double));
+				y = realloc(y, vector_size * sizeof(double));
+				if (x == NULL || y == NULL) {
+					fprintf(stderr, "memory allocation failed\n");
+					exit(ERR_ALLOC);
+				}
+			}
 
-		coord = 0;
+			if ((str = strtok(linebuf, " ,")) == NULL) {
+				fprintf(stderr, "format error for polygon with "
+					"id=%d\n", id);
+				exit(ERR_FORMAT);
+			}
+			dstr = (char *)strchr((const char *)str, (char)'D');
+			if (dstr) *dstr = 'E';
+			x[coord] = atof((const char *)str);
+
+			if ((str = strtok(NULL, " ,")) == NULL) {
+				fprintf(stderr, "format error for polygon with "
+					"id=%d\n", id);
+				exit(ERR_FORMAT);
+			}
+			dstr = (char *)strchr((const char *)str, (char)'D');
+			if (dstr) *dstr = 'E';
+			y[coord] = atof((const char *)str);
+			DEBUG_OUT2("x=%f, y=%f\n", x[coord], y[coord]);
+
+			coord ++;
+			/* ---------- end of copy */
+		}
 
 		/* loop coordinates of polygon 'id' */
 		while (getline(fp, linebuf) != EOF) {
 			if (CASE_INSENSITIVE_STR_CMP(linebuf, "end") == 0) {
-#ifdef DEBUG
-				fprintf(stderr, "debug output: a polygons "
-					"'end' detected\n");
-#endif
+				DEBUG_OUT("an 'end' detected\n");
 				break;
 			}
 
@@ -413,19 +447,18 @@ static void GeneratePolygons (	FILE *fp,
 			dstr = (char *)strchr((const char *)str, (char)'D');
 			if (dstr) *dstr = 'E';
 			y[coord] = atof((const char *)str);
-
-#ifdef DEBUG
-			fprintf(stderr, "debug output: x=%f, y=%f\n",
-				x[coord], y[coord]);
-#endif
+			DEBUG_OUT2("x=%f, y=%f\n", x[coord], y[coord]);
 
 			coord ++;
 		}
-		WriteDbf(hDBF, rec, id);
-		WritePolygon(hSHP, rec, coord, x, y);
-		rec ++;
 	}
 
+	/* now its time to create the last object */
+	WriteDbf(hDBF, rec, id);
+	if (partstarts) partstarts[0] = 0;
+	WritePolygon(hSHP, rec, coord, x, y, (nparts > 0 ? nparts+1 : 0), partstarts);
+
+	free(partstarts);
 	free(x);
 	free(y);
 }
@@ -456,10 +489,8 @@ int main(	int argc,
 		exit(ERR_TYPE);
 	}
 
-#ifdef DEBUG
-	fprintf(stderr, "debug output: outfile=%s\n", argv[1]);
-	fprintf(stderr, "debug output: type=%s\n", argv[2]);
-#endif
+	DEBUG_OUT1("outfile=%s\n", argv[1]);
+	DEBUG_OUT1("type=%s\n", argv[2]);
 
 	/* Open and prepare output files */
 	hDBF = LaunchDbf(argv[1]);
