@@ -1,5 +1,5 @@
 /* 
- * $Id: gen2shp.c,v 1.10 2002/01/24 16:56:29 jan Exp $
+ * $Id: gen2shp.c,v 1.11 2002/07/22 10:44:49 jan Exp $
  *
  * Copyright (C) 1999-2002 by Jan-Oliver Wagner <jan@intevation.de>
  * 
@@ -446,10 +446,12 @@ static void GeneratePolygons (	FILE *fp,
 		}
 	}
 
-	/* now its time to create the last object */
-	WriteDbf(hDBF, rec, id);
-	if (partstarts) partstarts[0] = 0;
-	WritePolygon(hSHP, rec, coord, x, y, (nparts > 0 ? nparts+1 : 0), partstarts);
+	if (id != -1) {
+		/* now its time to create the last object */
+		WriteDbf(hDBF, rec, id);
+		if (partstarts) partstarts[0] = 0;
+		WritePolygon(hSHP, rec, coord, x, y, (nparts > 0 ? nparts+1 : 0), partstarts);
+	}
 
 	free(partstarts);
 	free(x);
