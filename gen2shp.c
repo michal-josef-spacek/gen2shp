@@ -1,5 +1,5 @@
-/* Jan-Oliver Wagner	$Date: 1999/11/05 07:13:31 $
- * $Id: gen2shp.c,v 1.4 1999/11/05 07:13:31 jwagner Exp $
+/* Jan-Oliver Wagner	$Date: 1999/11/05 08:02:40 $
+ * $Id: gen2shp.c,v 1.5 1999/11/05 08:02:40 jwagner Exp $
  *
  * Copyright (C) 1999 by Jan-Oliver Wagner
  * 
@@ -18,7 +18,10 @@
  *   Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
  * $Log: gen2shp.c,v $
- * Revision 1.4  1999/11/05 07:13:31  jwagner
+ * Revision 1.5  1999/11/05 08:02:40  jwagner
+ * Added CASE_INSENSITIVE_STR_CMP
+ *
+ * Revision 1.4  1999/11/05  07:13:31  jwagner
  * test for "end" now case-insensitive.
  *
  * Revision 1.3  1999/09/16  08:44:57  jwagner
@@ -37,7 +40,7 @@
 
 #include "utils.h"
 
-#define VERSION "0.2.1 (RCS-$Revision: 1.4 $)"
+#define VERSION "0.2.2 (RCS-$Revision: 1.5 $)"
 
 /* Error codes for exit() routine: */
 #define	ERR_USAGE	1
@@ -66,6 +69,12 @@
  * if input lines with more characters appear,
  * errors are likely to occur */
 #define STR_BUFFER_SIZE		300
+
+#ifdef USE_STRICMP
+#define CASE_INSENSITIVE_STR_CMP	stricmp
+#else
+#define CASE_INSENSITIVE_STR_CMP	strcasecmp
+#endif
 
 void print_version(FILE *file)
 {
@@ -198,7 +207,7 @@ static void GeneratePoints (	FILE *fp,
 	int rec = 0;		/* Counter for records */
 
 	while (getline(fp, linebuf) != EOF) {
-		if (strcasecmp(linebuf, "end") == 0) {
+		if (CASE_INSENSITIVE_STR_CMP(linebuf, "end") == 0) {
 #ifdef DEBUG
 			fprintf(stderr, "debug output: 'end' detected\n");
 #endif
@@ -247,7 +256,7 @@ static void GenerateLines (	FILE *fp,
 
 	/* loop lines */
 	while (getline(fp, linebuf) != EOF) {
-		if (strcasecmp(linebuf, "end") == 0) {
+		if (CASE_INSENSITIVE_STR_CMP(linebuf, "end") == 0) {
 #ifdef DEBUG
 			fprintf(stderr, "debug output: final 'end' detected\n");
 #endif
@@ -265,7 +274,7 @@ static void GenerateLines (	FILE *fp,
 
 		/* loop coordinates of line 'id' */
 		while (getline(fp, linebuf) != EOF) {
-			if (strcasecmp(linebuf, "end") == 0) {
+			if (CASE_INSENSITIVE_STR_CMP(linebuf, "end") == 0) {
 #ifdef DEBUG
 				fprintf(stderr, "debug output: a lines "
 					"'end' detected\n");
@@ -329,7 +338,7 @@ static void GeneratePolygons (	FILE *fp,
 
 	/* loop polygons */
 	while (getline(fp, linebuf) != EOF) {
-		if (strcasecmp(linebuf, "end") == 0) {
+		if (CASE_INSENSITIVE_STR_CMP(linebuf, "end") == 0) {
 #ifdef DEBUG
 			fprintf(stderr, "debug output: final 'end' detected\n");
 #endif
@@ -347,7 +356,7 @@ static void GeneratePolygons (	FILE *fp,
 
 		/* loop coordinates of polygon 'id' */
 		while (getline(fp, linebuf) != EOF) {
-			if (strcasecmp(linebuf, "end") == 0) {
+			if (CASE_INSENSITIVE_STR_CMP(linebuf, "end") == 0) {
 #ifdef DEBUG
 				fprintf(stderr, "debug output: a polygons "
 					"'end' detected\n");
