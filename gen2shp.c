@@ -1,5 +1,5 @@
 /* 
- * $Id: gen2shp.c,v 1.11 2002/07/22 10:44:49 jan Exp $
+ * $Id: gen2shp.c,v 1.12 2002/10/10 19:12:44 jan Exp $
  *
  * Copyright (C) 1999-2002 by Jan-Oliver Wagner <jan@intevation.de>
  * 
@@ -471,6 +471,8 @@ int main(	int argc,
 			"outfile.shx and outfile.dbf\n"
 			"\ttype must be one of these: points lines polygons\n"
 			"\tinfile must be in 'generate' format\n");
+		fprintf(stderr, "example: gen2shp pnttest points < pnttest.gen\n");
+		fprintf(stderr, "         This creates files pnttest.[shp,shx,dbf]\n");
 		exit(ERR_USAGE);
 	}
 
