@@ -1,5 +1,5 @@
-/* Jan-Oliver Wagner	$Date: 1999/09/16 08:44:57 $
- * $Id: gen2shp.c,v 1.3 1999/09/16 08:44:57 jwagner Exp $
+/* Jan-Oliver Wagner	$Date: 1999/11/05 07:13:31 $
+ * $Id: gen2shp.c,v 1.4 1999/11/05 07:13:31 jwagner Exp $
  *
  * Copyright (C) 1999 by Jan-Oliver Wagner
  * 
@@ -18,7 +18,10 @@
  *   Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
  * $Log: gen2shp.c,v $
- * Revision 1.3  1999/09/16 08:44:57  jwagner
+ * Revision 1.4  1999/11/05 07:13:31  jwagner
+ * test for "end" now case-insensitive.
+ *
+ * Revision 1.3  1999/09/16  08:44:57  jwagner
  * Just a typo and new revision.
  *
  * Revision 1.2  1999/04/22 15:30:25  jwagner
@@ -34,7 +37,7 @@
 
 #include "utils.h"
 
-#define VERSION "0.2.1 (RCS-$Revision: 1.3 $)"
+#define VERSION "0.2.1 (RCS-$Revision: 1.4 $)"
 
 /* Error codes for exit() routine: */
 #define	ERR_USAGE	1
@@ -195,7 +198,7 @@ static void GeneratePoints (	FILE *fp,
 	int rec = 0;		/* Counter for records */
 
 	while (getline(fp, linebuf) != EOF) {
-		if (strcmp(linebuf, "end") == 0) {
+		if (strcasecmp(linebuf, "end") == 0) {
 #ifdef DEBUG
 			fprintf(stderr, "debug output: 'end' detected\n");
 #endif
@@ -244,7 +247,7 @@ static void GenerateLines (	FILE *fp,
 
 	/* loop lines */
 	while (getline(fp, linebuf) != EOF) {
-		if (strcmp(linebuf, "end") == 0) {
+		if (strcasecmp(linebuf, "end") == 0) {
 #ifdef DEBUG
 			fprintf(stderr, "debug output: final 'end' detected\n");
 #endif
@@ -262,7 +265,7 @@ static void GenerateLines (	FILE *fp,
 
 		/* loop coordinates of line 'id' */
 		while (getline(fp, linebuf) != EOF) {
-			if (strcmp(linebuf, "end") == 0) {
+			if (strcasecmp(linebuf, "end") == 0) {
 #ifdef DEBUG
 				fprintf(stderr, "debug output: a lines "
 					"'end' detected\n");
@@ -326,7 +329,7 @@ static void GeneratePolygons (	FILE *fp,
 
 	/* loop polygons */
 	while (getline(fp, linebuf) != EOF) {
-		if (strcmp(linebuf, "end") == 0) {
+		if (strcasecmp(linebuf, "end") == 0) {
 #ifdef DEBUG
 			fprintf(stderr, "debug output: final 'end' detected\n");
 #endif
@@ -344,7 +347,7 @@ static void GeneratePolygons (	FILE *fp,
 
 		/* loop coordinates of polygon 'id' */
 		while (getline(fp, linebuf) != EOF) {
-			if (strcmp(linebuf, "end") == 0) {
+			if (strcasecmp(linebuf, "end") == 0) {
 #ifdef DEBUG
 				fprintf(stderr, "debug output: a polygons "
 					"'end' detected\n");
