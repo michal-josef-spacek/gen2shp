@@ -1,5 +1,5 @@
-/* Jan-Oliver Wagner	$Date: 1999/04/22 15:30:25 $
- * $Id: gen2shp.c,v 1.2 1999/04/22 15:30:25 jwagner Exp $
+/* Jan-Oliver Wagner	$Date: 1999/09/16 08:44:57 $
+ * $Id: gen2shp.c,v 1.3 1999/09/16 08:44:57 jwagner Exp $
  *
  * Copyright (C) 1999 by Jan-Oliver Wagner
  * 
@@ -18,6 +18,9 @@
  *   Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
  * $Log: gen2shp.c,v $
+ * Revision 1.3  1999/09/16 08:44:57  jwagner
+ * Just a typo and new revision.
+ *
  * Revision 1.2  1999/04/22 15:30:25  jwagner
  * Added further geodata types: lines and polygons.
  * Rearrangement of procedures, some facelifting for readability.
@@ -31,7 +34,7 @@
 
 #include "utils.h"
 
-#define VERSION "0.2.0 (RCS-$Revision: 1.2 $)"
+#define VERSION "0.2.1 (RCS-$Revision: 1.3 $)"
 
 /* Error codes for exit() routine: */
 #define	ERR_USAGE	1
@@ -411,7 +414,7 @@ int main(	int argc,
 	if (strcmp(argv[2], "lines") == 0) ObjectType = OBJECTTYPE_LINE;
 	if (strcmp(argv[2], "polygons") == 0) ObjectType = OBJECTTYPE_POLYGON;
 	if (ObjectType == OBJECTTYPE_NONE) {
-		fprintf(stderr, "type '%s' unknown, use one these: "
+		fprintf(stderr, "type '%s' unknown, use one of these: "
 			"points lines polygons.", argv[2]);
 		exit(ERR_TYPE);
 	}
