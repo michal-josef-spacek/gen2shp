@@ -1,5 +1,5 @@
 /* 
- * $Id: gen2shp.c,v 1.9 2002/01/24 08:24:56 jan Exp $
+ * $Id: gen2shp.c,v 1.10 2002/01/24 16:56:29 jan Exp $
  *
  * Copyright (C) 1999-2002 by Jan-Oliver Wagner <jan@intevation.de>
  * 
@@ -374,6 +374,7 @@ static void GeneratePolygons (	FILE *fp,
 				/* this ID is a special one.
 				 * it introduces a hole in the previous
 				 * polygon.
+				 * FIXME: we need to handle this situation
 				 */
 				DEBUG_OUT1("special id=%d found\n", new_id);
 			} else {
