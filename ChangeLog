@@ -1,3 +1,7 @@
+2002-10-10  Jan-Oliver Wagner  <jan@intevation.de>
+
+	* gen2shp.c (main): added example to usage
+
 2002-07-22  Jan-Oliver Wagner  <jan@intevation.de>
 
 	* gen2shp.c (GeneratePolygons): bugfix: Added test for empty input file
