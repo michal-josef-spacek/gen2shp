@@ -1,5 +1,5 @@
-/* Jan-Oliver Wagner	$Date: 1999/04/21 16:01:31 $
- * $Id: gen2shp.c,v 1.1 1999/04/21 16:01:31 jwagner Exp $
+/* Jan-Oliver Wagner	$Date: 1999/04/22 15:30:25 $
+ * $Id: gen2shp.c,v 1.2 1999/04/22 15:30:25 jwagner Exp $
  *
  * Copyright (C) 1999 by Jan-Oliver Wagner
  * 
@@ -18,20 +18,27 @@
  *   Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
  * $Log: gen2shp.c,v $
- * Revision 1.1  1999/04/21 16:01:31  jwagner
+ * Revision 1.2  1999/04/22 15:30:25  jwagner
+ * Added further geodata types: lines and polygons.
+ * Rearrangement of procedures, some facelifting for readability.
+ *
+ * Revision 1.1  1999/04/21  16:01:31  jwagner
  * Initial revision
  *
  */
 
-#include <shapefil.h>
+#include <shapefil.h>	/* from shapelib */
 
-#include <utils.h>
+#include "utils.h"
 
-#define VERSION "0.1.0 (RCS-$Revision: 1.1 $)"
+#define VERSION "0.2.0 (RCS-$Revision: 1.2 $)"
 
+/* Error codes for exit() routine: */
 #define	ERR_USAGE	1
 #define ERR_TYPE	2
 #define ERR_FORMAT	3
+#define ERR_OBJECTTYPE	4
+#define ERR_ALLOC	5
 
 #define ERR_DBFCREATE	10
 #define ERR_DBFADDFIELD	11
@@ -40,21 +47,35 @@
 
 #define ERR_SHPOPEN	20
 
+/* Object Type codes used in main(): */
+#define OBJECTTYPE_NONE		0
+#define OBJECTTYPE_POINT	1
+#define OBJECTTYPE_LINE		2
+#define OBJECTTYPE_POLYGON	3
+
+/* minimum number of coordinates allocated blockwise */
+#define COORDS_BLOCKSIZE	100
+
+/* maximum length for read strings,
+ * if input lines with more characters appear,
+ * errors are likely to occur */
+#define STR_BUFFER_SIZE		300
+
 void print_version(FILE *file)
 {
-             fprintf(file,"gen2shp version " VERSION "\n"); 
-             fprintf(file,"Copyright (C) 1999 by Jan-Oliver Wagner.\n"
-             	    "The GNU GENERAL PUBLIC LICENSE applies."
-             	    	"Absolutly No Warranty!\n");
+	fprintf(file,"gen2shp version " VERSION "\n"); 
+	fprintf(file,"Copyright (C) 1999 by Jan-Oliver Wagner.\n"
+		"The GNU GENERAL PUBLIC LICENSE applies. "
+		"Absolutly No Warranty!\n");
 #ifdef DEBUG
-             fprintf(file,"compiled with option: DEBUG\n"); 
+	fprintf(file,"compiled with option: DEBUG\n"); 
 #endif
 }
 
 static DBFHandle LaunchDbf (	const char *fname ) {
 	DBFHandle	hDBF;
-	char		dbffname[255];
-	char		fieldname[255];
+	char		dbffname[STR_BUFFER_SIZE];
+	char		fieldname[STR_BUFFER_SIZE];
 
 	sprintf(dbffname, "%s.dbf", fname);
 	sprintf(fieldname, "%s-id", fname);
@@ -81,17 +102,32 @@ static DBFHandle LaunchDbf (	const char *fname ) {
 	return hDBF;
 }
 
-static SHPHandle LaunchShp(	const char *fname ) {
+static SHPHandle LaunchShp(	const char *fname,
+				int ObjectType ) {
 	SHPHandle	hSHP;
 	SHPObject	*psShape;
-	char		shpfname[255];
+	char		shpfname[STR_BUFFER_SIZE];
 
 	sprintf(shpfname, "%s.shp", fname);
 
-	hSHP = SHPCreate( shpfname, SHPT_POINT );
+	switch (ObjectType) {
+		case OBJECTTYPE_POINT:
+			hSHP = SHPCreate( shpfname, SHPT_POINT );
+			break;
+		case OBJECTTYPE_LINE:
+			hSHP = SHPCreate( shpfname, SHPT_ARC );
+			break;
+		case OBJECTTYPE_POLYGON:
+			hSHP = SHPCreate( shpfname, SHPT_POLYGON );
+			break;
+		default:
+			fprintf(stderr, "internal error: "
+				"unknown ObjectType=%d\n", ObjectType);
+			exit(ERR_OBJECTTYPE);
+	}
 
 	if( hSHP == NULL ) {
-		fprintf(stderr, "SHPOpen(%s,\"SHPT_POINT\") failed.\n", shpfname );
+		fprintf(stderr, "SHPOpen(%s, shape_type) failed.\n", shpfname );
 		exit(ERR_SHPOPEN);
 	}
 
@@ -119,40 +155,43 @@ static void WritePoint(	SHPHandle hSHP,
 	SHPDestroyObject( psShape );
 }
 
-int main(	int argc,
-		char ** argv ) {
-	int id;
-	double x, y;
-	int result;
-	int rec = 0;
-	char linebuf[255];
-	char * str;
-	DBFHandle hDBF;
-	SHPHandle hSHP;
+static void WriteLine(	SHPHandle hSHP,
+			int rec,
+			int coords,
+			double * x,
+			double * y ) {
+	SHPObject	*psShape;
 
-	if (argc != 3) {
-		print_version(stderr);
-		fprintf(stderr, "usage: %s outfile type < infile\n", argv[0]);
-		fprintf(stderr, "\treads stdin and creates outfile.shp, "
-			"outfile.shx and outfile.dbf\n"
-			"\ttype must one of these: points\n"
-			"\tinfile must be in 'generate' format\n");
-		exit(ERR_USAGE);
-	}
+	psShape = SHPCreateObject( SHPT_ARC, rec, 0, NULL, NULL,
+		coords, x, y, NULL, NULL );
+	SHPWriteObject( hSHP, -1, psShape );
+	SHPDestroyObject( psShape );
+}
 
-	if (strcmp(argv[2], "points") != 0) {
-		fprintf(stderr, "type '%s' unknown, use one these: points.", argv[2]);
-		exit(ERR_TYPE);
-	}
+static void WritePolygon(	SHPHandle hSHP,
+				int rec,
+				int coords,
+				double * x,
+				double * y ) {
+	SHPObject	*psShape;
 
-#ifdef DEBUG
-	fprintf(stderr, "debug output: outfile=%s\n", argv[1]);
-#endif
+	psShape = SHPCreateObject( SHPT_POLYGON, rec, 0, NULL, NULL,
+		coords, x, y, NULL, NULL );
+	SHPWriteObject( hSHP, -1, psShape );
+	SHPDestroyObject( psShape );
+}
 
-	hDBF = LaunchDbf(argv[1]);
-	hSHP = LaunchShp(argv[1]);
+/* read from fp and generate point shapefile to hDBF/hSHP */
+static void GeneratePoints (	FILE *fp,
+				DBFHandle hDBF,
+				SHPHandle hSHP ) {
+	char linebuf[STR_BUFFER_SIZE];	/* buffer for line-wise reading from file */
+	int id;			/* ID of point */
+	double x, y;		/* coordinates of point */
+	char * str;		/* tmp variable needed for assertions */
+	int rec = 0;		/* Counter for records */
 
-	while (getline(stdin, linebuf) != EOF) {
+	while (getline(fp, linebuf) != EOF) {
 		if (strcmp(linebuf, "end") == 0) {
 #ifdef DEBUG
 			fprintf(stderr, "debug output: 'end' detected\n");
@@ -185,9 +224,228 @@ int main(	int argc,
 		WritePoint(hSHP, rec, x, y);
 		rec ++;
 	}
+}
 
+/* read from fp and generate line/arc shapefile to hDBF/hSHP */
+static void GenerateLines (	FILE *fp,
+				DBFHandle hDBF,
+				SHPHandle hSHP ) {
+	char linebuf[STR_BUFFER_SIZE];	/* buffer for line-wise reading from file */
+	int id;			/* ID of point */
+	double	* x = NULL,
+		* y = NULL;	/* coordinates arrays */
+	int vector_size = 0;	/* current size of the vectors x and y */
+	char * str;		/* tmp variable needed for assertions */
+	int rec = 0;		/* Counter for records */
+	int coord = 0;		/* Counter for coordinates */
+
+	/* loop lines */
+	while (getline(fp, linebuf) != EOF) {
+		if (strcmp(linebuf, "end") == 0) {
+#ifdef DEBUG
+			fprintf(stderr, "debug output: final 'end' detected\n");
+#endif
+			break;
+		}
+
+		/* IDs are in single lines */
+		id = atoi((const char *)linebuf);
+
+#ifdef DEBUG
+		fprintf(stderr, "debug output: id=%d\n", id);
+#endif
+
+		coord = 0;
+
+		/* loop coordinates of line 'id' */
+		while (getline(fp, linebuf) != EOF) {
+			if (strcmp(linebuf, "end") == 0) {
+#ifdef DEBUG
+				fprintf(stderr, "debug output: a lines "
+					"'end' detected\n");
+#endif
+				break;
+			}
+
+			/* allocate coordinate vectors if to small */
+			if (vector_size <= coord) {
+				vector_size += COORDS_BLOCKSIZE;
+				x = realloc(x, vector_size * sizeof(double));
+				y = realloc(y, vector_size * sizeof(double));
+				if (x == NULL || y == NULL) {
+					fprintf(stderr, "memory allocation failed\n");
+					exit(ERR_ALLOC);
+				}
+			}
+
+			if ((str = dtok(linebuf, ',')) == NULL) {
+				fprintf(stderr, "format error for line with "
+					"id=%d\n", id);
+				exit(ERR_FORMAT);
+			}
+			x[coord] = atof((const char *)str);
+
+			if ((str = dtok(NULL, ',')) == NULL) {
+				fprintf(stderr, "format error for line with "
+					"id=%d\n", id);
+				exit(ERR_FORMAT);
+			}
+			y[coord] = atof((const char *)str);
+
+#ifdef DEBUG
+			fprintf(stderr, "debug output: x=%f, y=%f\n",
+				x[coord], y[coord]);
+#endif
+
+			coord ++;
+		}
+		WriteDbf(hDBF, rec, id);
+		WriteLine(hSHP, rec, coord, x, y);
+		rec ++;
+	}
+
+	free(x);
+	free(y);
+}
+
+/* read from fp and generate polgon shapefile to hDBF/hSHP */
+static void GeneratePolygons (	FILE *fp,
+				DBFHandle hDBF,
+				SHPHandle hSHP ) {
+	char linebuf[STR_BUFFER_SIZE];	/* buffer for line-wise reading from file */
+	int id;			/* ID of point */
+	double	* x = NULL,
+		* y = NULL;	/* coordinates arrays */
+	int vector_size = 0;	/* current size of the vectors x and y */
+	char * str;		/* tmp variable needed for assertions */
+	int rec = 0;		/* Counter for records */
+	int coord = 0;		/* Counter for coordinates */
+
+	/* loop polygons */
+	while (getline(fp, linebuf) != EOF) {
+		if (strcmp(linebuf, "end") == 0) {
+#ifdef DEBUG
+			fprintf(stderr, "debug output: final 'end' detected\n");
+#endif
+			break;
+		}
+
+		/* IDs are in single lines */
+		id = atoi((const char *)linebuf);
+
+#ifdef DEBUG
+		fprintf(stderr, "debug output: id=%d\n", id);
+#endif
+
+		coord = 0;
+
+		/* loop coordinates of polygon 'id' */
+		while (getline(fp, linebuf) != EOF) {
+			if (strcmp(linebuf, "end") == 0) {
+#ifdef DEBUG
+				fprintf(stderr, "debug output: a polygons "
+					"'end' detected\n");
+#endif
+				break;
+			}
+
+			/* allocate coordinate vectors if to small */
+			if (vector_size <= coord) {
+				vector_size += COORDS_BLOCKSIZE;
+				x = realloc(x, vector_size * sizeof(double));
+				y = realloc(y, vector_size * sizeof(double));
+				if (x == NULL || y == NULL) {
+					fprintf(stderr, "memory allocation failed\n");
+					exit(ERR_ALLOC);
+				}
+			}
+
+			if ((str = dtok(linebuf, ',')) == NULL) {
+				fprintf(stderr, "format error for polygon with "
+					"id=%d\n", id);
+				exit(ERR_FORMAT);
+			}
+			x[coord] = atof((const char *)str);
+
+			if ((str = dtok(NULL, ',')) == NULL) {
+				fprintf(stderr, "format error for polygon with "
+					"id=%d\n", id);
+				exit(ERR_FORMAT);
+			}
+			y[coord] = atof((const char *)str);
+
+#ifdef DEBUG
+			fprintf(stderr, "debug output: x=%f, y=%f\n",
+				x[coord], y[coord]);
+#endif
+
+			coord ++;
+		}
+		WriteDbf(hDBF, rec, id);
+		WritePolygon(hSHP, rec, coord, x, y);
+		rec ++;
+	}
+
+	free(x);
+	free(y);
+}
+
+int main(	int argc,
+		char ** argv ) {
+	DBFHandle hDBF;		/* handle for dBase file */
+	SHPHandle hSHP;		/* handle for shape files .shx and .shp */
+	int ObjectType = OBJECTTYPE_NONE;
+
+	if (argc != 3) {
+		print_version(stderr);
+		fprintf(stderr, "usage: %s outfile type < infile\n", argv[0]);
+		fprintf(stderr, "\treads stdin and creates outfile.shp, "
+			"outfile.shx and outfile.dbf\n"
+			"\ttype must be one of these: points lines polygons\n"
+			"\tinfile must be in 'generate' format\n");
+		exit(ERR_USAGE);
+	}
+
+	/* determine Object Type: */
+	if (strcmp(argv[2], "points") == 0) ObjectType = OBJECTTYPE_POINT;
+	if (strcmp(argv[2], "lines") == 0) ObjectType = OBJECTTYPE_LINE;
+	if (strcmp(argv[2], "polygons") == 0) ObjectType = OBJECTTYPE_POLYGON;
+	if (ObjectType == OBJECTTYPE_NONE) {
+		fprintf(stderr, "type '%s' unknown, use one these: "
+			"points lines polygons.", argv[2]);
+		exit(ERR_TYPE);
+	}
+
+#ifdef DEBUG
+	fprintf(stderr, "debug output: outfile=%s\n", argv[1]);
+	fprintf(stderr, "debug output: type=%s\n", argv[2]);
+#endif
+
+	/* Open and prepare output files */
+	hDBF = LaunchDbf(argv[1]);
+	hSHP = LaunchShp(argv[1], ObjectType);
+
+	/* Call generate function */
+	switch (ObjectType) {
+		case OBJECTTYPE_POINT:
+			GeneratePoints(stdin, hDBF, hSHP);
+			break;
+		case OBJECTTYPE_LINE:
+			GenerateLines(stdin, hDBF, hSHP);
+			break;
+		case OBJECTTYPE_POLYGON:
+			GeneratePolygons(stdin, hDBF, hSHP);
+			break;
+		default:
+			fprintf(stderr, "internal error: "
+				"unknown ObjectType=%d\n", ObjectType);
+			exit(ERR_OBJECTTYPE);
+	}
+
+	/* Finish output files */
 	DBFClose( hDBF );
 	SHPClose( hSHP );
 
+	/* success */
 	exit(0);
 }
