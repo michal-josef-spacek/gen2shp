@@ -1,4 +1,7 @@
 # $Log: Makefile,v $
+# Revision 1.3  1999/09/16 08:45:32  jwagner
+# new shapelib revision
+#
 # Revision 1.2  1999/04/22 15:33:31  jwagner
 # Added further tests and utils module.
 #
@@ -6,7 +9,7 @@
 # Initial revision
 #
 
-SHAPELIBPATH=/home/fkoorman/jfb/src/shapelib-1.2.4
+SHAPELIBPATH=/home/fkoorman/jfb/src/shapelib-1.2.5
 
 CC=gcc
 CFLAGS=-I$(SHAPELIBPATH) # -DDEBUG
