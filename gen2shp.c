@@ -1,5 +1,5 @@
-/* Jan-Oliver Wagner	$Date: 1999/11/05 08:02:40 $
- * $Id: gen2shp.c,v 1.5 1999/11/05 08:02:40 jwagner Exp $
+/* Jan-Oliver Wagner	$Date: 2000/03/13 12:58:53 $
+ * $Id: gen2shp.c,v 1.6 2000/03/13 12:58:53 jwagner Exp $
  *
  * Copyright (C) 1999 by Jan-Oliver Wagner
  * 
@@ -18,7 +18,12 @@
  *   Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
  * $Log: gen2shp.c,v $
- * Revision 1.5  1999/11/05 08:02:40  jwagner
+ * Revision 1.6  2000/03/13 12:58:53  jwagner
+ * Now recognizes "D" for "E" as well in the exponential representation.
+ * Now accepts "," and " " as delimeters. Sequences of delimeters are
+ * treated as one delimeter.
+ *
+ * Revision 1.5  1999/11/05  08:02:40  jwagner
  * Added CASE_INSENSITIVE_STR_CMP
  *
  * Revision 1.4  1999/11/05  07:13:31  jwagner
@@ -36,11 +41,13 @@
  *
  */
 
+#include <string.h>
+
 #include <shapefil.h>	/* from shapelib */
 
 #include "utils.h"
 
-#define VERSION "0.2.2 (RCS-$Revision: 1.5 $)"
+#define VERSION "0.2.3 (RCS-$Revision: 1.6 $)"
 
 /* Error codes for exit() routine: */
 #define	ERR_USAGE	1
@@ -204,6 +211,7 @@ static void GeneratePoints (	FILE *fp,
 	int id;			/* ID of point */
 	double x, y;		/* coordinates of point */
 	char * str;		/* tmp variable needed for assertions */
+	char * dstr;		/* tmp variable needed to find out substrings */
 	int rec = 0;		/* Counter for records */
 
 	while (getline(fp, linebuf) != EOF) {
@@ -213,22 +221,26 @@ static void GeneratePoints (	FILE *fp,
 #endif
 			break;
 		}
-		if ((str = dtok(linebuf, ',')) == NULL) {
+		if ((str = strtok(linebuf, " ,")) == NULL) {
 			fprintf(stderr, "format error in line %d\n", rec + 1);
 			exit(ERR_FORMAT);
 		}
 		id = atoi((const char *)str);
 
-		if ((str = dtok(NULL, ',')) == NULL) {
+		if ((str = strtok(NULL, " ,")) == NULL) {
 			fprintf(stderr, "format error in line %d\n", rec + 1);
 			exit(ERR_FORMAT);
 		}
+		dstr = (char *)index((const char *)str, (char)'D');
+		if (dstr) *dstr = 'E';
 		x = atof((const char *)str);
 
-		if ((str = dtok(NULL, ',')) == NULL) {
+		if ((str = strtok(NULL, " ,")) == NULL) {
 			fprintf(stderr, "format error in line %d\n", rec + 1);
 			exit(ERR_FORMAT);
 		}
+		dstr = (char *)index((const char *)str, (char)'D');
+		if (dstr) *dstr = 'E';
 		y = atof((const char *)str);
 
 #ifdef DEBUG
@@ -251,6 +263,7 @@ static void GenerateLines (	FILE *fp,
 		* y = NULL;	/* coordinates arrays */
 	int vector_size = 0;	/* current size of the vectors x and y */
 	char * str;		/* tmp variable needed for assertions */
+	char * dstr;		/* tmp variable needed to find out substrings */
 	int rec = 0;		/* Counter for records */
 	int coord = 0;		/* Counter for coordinates */
 
@@ -293,18 +306,22 @@ static void GenerateLines (	FILE *fp,
 				}
 			}
 
-			if ((str = dtok(linebuf, ',')) == NULL) {
+			if ((str = strtok(linebuf, " ,")) == NULL) {
 				fprintf(stderr, "format error for line with "
 					"id=%d\n", id);
 				exit(ERR_FORMAT);
 			}
+			dstr = (char *)index((const char *)str, (char)'D');
+			if (dstr) *dstr = 'E';
 			x[coord] = atof((const char *)str);
 
-			if ((str = dtok(NULL, ',')) == NULL) {
+			if ((str = strtok(NULL, " ,")) == NULL) {
 				fprintf(stderr, "format error for line with "
 					"id=%d\n", id);
 				exit(ERR_FORMAT);
 			}
+			dstr = (char *)index((const char *)str, (char)'D');
+			if (dstr) *dstr = 'E';
 			y[coord] = atof((const char *)str);
 
 #ifdef DEBUG
@@ -333,6 +350,7 @@ static void GeneratePolygons (	FILE *fp,
 		* y = NULL;	/* coordinates arrays */
 	int vector_size = 0;	/* current size of the vectors x and y */
 	char * str;		/* tmp variable needed for assertions */
+	char * dstr;		/* tmp variable needed to find out substrings */
 	int rec = 0;		/* Counter for records */
 	int coord = 0;		/* Counter for coordinates */
 
@@ -375,18 +393,22 @@ static void GeneratePolygons (	FILE *fp,
 				}
 			}
 
-			if ((str = dtok(linebuf, ',')) == NULL) {
+			if ((str = strtok(linebuf, " ,")) == NULL) {
 				fprintf(stderr, "format error for polygon with "
 					"id=%d\n", id);
 				exit(ERR_FORMAT);
 			}
+			dstr = (char *)index((const char *)str, (char)'D');
+			if (dstr) *dstr = 'E';
 			x[coord] = atof((const char *)str);
 
-			if ((str = dtok(NULL, ',')) == NULL) {
+			if ((str = strtok(NULL, " ,")) == NULL) {
 				fprintf(stderr, "format error for polygon with "
 					"id=%d\n", id);
 				exit(ERR_FORMAT);
 			}
+			dstr = (char *)index((const char *)str, (char)'D');
+			if (dstr) *dstr = 'E';
 			y[coord] = atof((const char *)str);
 
 #ifdef DEBUG
