@@ -1,0 +1,450 @@
+<html>
+<body bgcolor="#CCCCCC" text="#000000">
+
+<h1>gen2shp - converts ArcInfo generate format to shapefile format</h1>
+
+This is the new homepage of gen2shp (see
+<a href="http://www.usf.uos.de/~jwagner/gen2shp/gen2shp.html">the previous homepage</a>
+to get sources and DOS-binaries of version 0.2.3).
+
+<h2>What is it?</h2>
+
+gen2shp is a simple C-Progam which can read the format required
+by the ArcInfo generate command. The data in this file will be
+converted to the shapefile format which actually means to three files:
+.shp, .shx and .dbf.
+ 
+<h2>Why was it developed?</h2>
+
+Within the framework of my PhD thesis I have implemented an
+automatic processing scheme to create ready-to-use data sets
+for <a href="http://greater.intevation.org/">GREAT-ER</a>
+(Geography-referenced Regional Exposure Assessment Tool for European Rivers).
+Among these are several geodata sets for use in Shapefile format.
+
+As a starting point all data are requested in a specific text file format.
+For the further processing of these file and (as a part of it) for the
+creation of geodata in Shapefile format to be loaded in Thuban I had three requirements:
+All parts of the methodology have
+
+<ol>
+
+<li>	to be independent of any proprietary product.
+	Hence, the whole methodology can be made available as Free Software.
+
+<li>	to be platform independent.
+	Hence, almost anyone who is interested can execute the methodology.
+
+<li>	to have a commandline interface.
+	Hence the command sequence can be handed over to a makefile and
+	this way be made 100% automatic.
+
+</ol>
+
+In case you need a gen2shp solution based on Avenue, I recommend to
+use the <a href="http://web.archive.org/web/20021003233950/http://warden.www.cistron.nl/geo/">Free ArcView scripts</a>
+by Ron  Wardenier. These are licensed with the LGPL.
+
+<h2>History</h2>
+
+<h3>Changes since 0.3.1 (only in CVS)</h3>
+
+* added example to usage (thanks to Tom Callsen for this hint)<br>
+* fixed problem for empty polygon input files
+(bug found by Michal Lewandowski)<br>
+* Rearrangement of files for CVS, some code cleanup.<br>
+* Makefile: Fixed a problem in the sequence of parameters for CC
+(fixed by Jørgen Binningsbø).
+
+<h3>Changes from 0.3.0 to 0.3.1</h3>
+
+Just a better packaging, no changes in the source code.
+
+<h3>Changes from 0.2.3 to 0.3.0</h3>
+
+Added multi-part
+support for polygons (trying to handle 
+islands within a polygon correctly).
+This new feature has passed some of my tests,
+but it should not be trusted blindly.
+
+<p>
+This version compiles differently, you should
+have dynamic version of shapelib or modify
+Makefile to compile in old fashion of V0.2.3.
+Will provide DOS-binaries if I find some time.
+
+<p>
+Thanks go to Ron Wardenier and Branko Kosuta
+who are responsible for pushing me to implement the
+new feature.
+
+<h3>Changes from 0.2.2 to 0.2.3</h3>
+
+ArcInfo uses "D" instead of "E" for the exponent representation.
+This was not considered in the previous version, it was
+necessary to replace "D" by "E" before issuing gen2shp.
+This is fixed now.
+
+<p>
+Previous releases only accepted "," as delimiter.
+Now also spaces are accepted. Furthermore
+any sequence of delimiters is treated as one delimiter
+(this was different in the previous version!).
+
+<p>
+Thanks to Markus Neteler, University of Hannover and
+to a gen2shp user named Eric.
+
+<h3>Changes from 0.2.1 to 0.2.2</h3>
+
+ArcInfo handles the keyword "end" case-insensitiv. Now
+gen2shp does, too. Thanks to Doug Nebert of the
+Federal Geographic Data Committee for that hint.
+
+<h3>Changes from 0.2.0 to 0.2.1</h3>
+
+Just a typo and test with new revision of shapelib (1.2.4 to 1.2.5).
+Furthermore, DOS-executables are now included.
+
+<h2>Current version</h2>
+
+The current version is 0.3.1 and can handle points, lines and polygons.
+It is successfully tested on a Solaris, Linux and DOS, but there is no
+reason why it should not work on any other.
+
+<p>
+gen2shp does the job properly I needed it for. If you have any
+problems applying gen2shp send me an email. By one of us or
+jointly the problem will surely be solved.
+
+<p>
+You will need the shapelib version 1.2.8  (or higher) which is
+freely available (see requirements and installation below).
+
+<h2>Future Versions</h2>
+
+Many features are conceivable: 
+
+<ul>
+
+<li>	Consideration of 3D-Objects
+
+<li>	Development of 'gen2shp's counterpart: shp2gen
+
+<li>	... (tell me)
+
+</ul>
+
+<h2>Usage</h2>
+
+<pre>
+usage: gen2shp outfile type < infile
+        reads stdin and creates outfile.shp, outfile.shx and outfile.dbf
+        type must be one of these: points lines polygons
+        infile must be in 'generate' format
+</pre>
+
+<h2>Copyright and License</h2>
+
+Copyright (C) 1999-2002 by Jan-Oliver Wagner.
+The GNU GENERAL PUBLIC LICENSE applies. Absolutly No Warranty!
+
+<p>
+See head of file gen2shp.c for details.
+
+<p>
+I have used a module (utils.c) being a part of txt2dbf 1.0.2 
+(<a href="http://www.usf.uni-osnabrueck.de/~fkoorman/software/dbftools.en.html">
+dBase Tools</a>). The author is Frank Koormann.
+He made the source freely available in the common sense - thanks to Frank.
+
+<h2>Requirements</h2>
+
+<h3>shapelib 1.2.8</h3>
+
+Developed by Frank Warmerdam. Download from
+<a href="http://shapelib.maptools.org/">
+Shapelib Homepage</a>.
+
+<p>
+Licensed as Free Software.
+Thanks to Frank.
+
+<h2>Download</h2>
+
+<a href="http://web.archive.org/web/20110716144136/http://intevation.de/~jan/gen2shp/gen2shp-0.3.1.tar.gz">gen2shp-0.3.1.tar.gz</a> (16 KB) or <a href="http://web.archive.org/web/20110716144136/http://intevation.de/~jan/gen2shp/gen2shp-0.3.1.zip">gen2shp-0.3.1.zip</a>
+(17 KB)
+
+<p>
+Binaries for Windows prepared by
+Branko Kosuta &lt;<a href="mailto:bkosuta@hotmail.com">bkosuta@hotmail.com</a>&gt;:
+<a href="http://web.archive.org/web/20110716144136/http://intevation.de/~jan/gen2shp/gen2shp-0.3.1.bin.msw.zip">gen2shp-0.3.1.bin.msw.zip</a> (41 KB)
+
+<p>
+Binaries and sources for an enhanced Windows-Version by
+Rusman Rusyadi &lt;<a href="mailto:rusmanr@yahoo.com">rusmanr@yahoo.com</a>&gt;:
+<a href="http://web.archive.org/web/20110716144136/http://intevation.de/~jan/gen2shp/Gen2Shp-0.3.1-win32.zip">Gen2Shp-0.3.1-win32.zip</a> (33 KB).
+This was compiles with borland c++ builder and has
+been tested on W2000.
+
+<p>
+Thanks to Branko and Rusman.
+
+<h2>CVS</h2>
+
+<table bgcolor=#FFFFDD>
+<tr><th align=left>Online:<td><a href="http://www.intevation.de/cgi-bin/viewcvs-freegis.cgi"
+   >[ gen2shp source code via viewcvs ]</a>
+<tr><th valign=top>Read access: <td align=top
+   >CVSROOT=<small><tt>:pserver:anonymous@intevation.de:/home/freegis/jail/freegisrepository</tt></small>
+<br>Password: <tt>anonymous</tt> ;
+   Module: <tt>gen2shp</tt>
+</table>
+
+
+<h2>Installation steps</h2>
+
+For all standard operating system, the following
+steps should work:
+
+<ol>
+
+<li>	Download shapelib 1.2.8 (or higher) , install and compile it
+	somewhere on your system - gen2shp prefers the dynamic library (manual
+	work needed for static binding, not much work though).
+
+<li>	Download gen2shp, unpack files somewhere on your system.
+
+<li>	Execute 'make'. Everything should work.
+
+<li>	Execute 'test' to check whether something wicked happens.
+
+</ol>
+
+<h2>generate Format</h2>
+
+You may refer to ArcInfo documentation (if available).
+For Polygons, a special syntax allows multi-part description:
+omitting an ID after an END, a new part of the previously
+started polygon is created rather than a new polygon.
+
+<p>
+Examples should illustrate format as well:
+
+<h3>Example: points</h2>
+
+<pre>
+8,-1.405877,53.721508
+13,-2.045479,53.731064
+14,-1.984840,53.731972
+15,-1.925755,53.710373
+16,-1.889399,53.706749
+17,-1.859130,53.696831
+18,-1.730477,53.681328
+19,-1.719866,53.683102
+20,-1.604871,53.673790
+21,-1.547393,53.669090
+end
+</pre>
+
+<h3>Example: lines</h2>
+
+<pre>
+12033
+-1.352874,53.629650
+-1.352463,53.629875
+-1.351808,53.630165
+-1.351263,53.630173
+-1.350566,53.630314
+-1.349868,53.630444
+-1.349170,53.630573
+-1.348428,53.630669
+END
+26456
+-1.360715,53.624237
+-1.358755,53.623821
+-1.356220,53.623493
+-1.352882,53.623207
+-1.350488,53.623516
+-1.349195,53.624039
+-1.347095,53.625870
+-1.349000,53.628876
+-1.348428,53.630669
+end
+9033
+-1.371616,53.643658
+-1.367998,53.642830
+end
+9037
+-1.395607,53.669220
+-1.394491,53.669979
+-1.393896,53.671398
+-1.393909,53.673672
+-1.390823,53.674545
+-1.383970,53.675240
+-1.381641,53.674030
+-1.375354,53.673252
+-1.371793,53.672478
+end
+end
+</pre>
+
+<h3>Example: (simple) polygons</h2>
+
+<pre>
+1
+0,0
+1,0
+1,1
+0,1
+0,0
+end
+2
+10,10
+10,11
+11,11
+11,10
+10,10
+end
+end
+</pre>
+
+<h3>Example: multi-part polygons (with islands)</h2>
+
+<pre>
+701
+3,9
+4,5
+8,4
+9,7
+6,9
+3,9
+END
+7,7
+4,7
+6,6
+7,7
+END
+702
+13,9
+14,5
+18,4
+19,7
+16,9
+13,9
+END
+17,7
+15,7
+15,5
+17,5
+17,7
+END
+23,9
+24,5
+28,4
+29,7
+26,9
+23,9
+END
+END
+</pre>
+
+<h2>Frequently Asked Questions (FAQ)</h2>
+
+<h3>1. Howto create attribute (dbf-) files for shapefiles?</h3>
+
+gen2shp can not process other data than the IDs and coordinate
+information of geographic objects.
+
+<p>
+This example illustrates principle ways how to
+create the .dbf-file that contains the attributes for
+a shapefile.
+
+<p>
+Consider you have point information with some attributes
+in one file:
+
+<pre>
+bash-2.05b$ cat data.txt 
+# ID,X,Y,Value1,Name,Value2
+8,-1.405877,53.721508,42,A Name,6.8
+13,-2.045479,53.731064,12,Yet another Name,2.7
+14,-1.984840,53.731972,1234,No Name,3.14
+</pre>
+
+First step is to separate the coordinate data from
+the attribute data (note, that the grep command eliminates lines with a '#'):
+
+<pre>
+bash-2.05b$ cut -d , -f 1,2,3 < data.txt | grep -v '#' > data.gen
+bash-2.05b$ cat data.gen 
+8,-1.405877,53.721508
+13,-2.045479,53.731064
+14,-1.984840,53.731972
+</pre>
+
+<pre>
+bash-2.05b$ cut -d , -f 1,4,5,6 < data.txt  > data.att
+bash-2.05b$ cat data.att
+# ID,Value1,Name,Value2
+8,42,A Name,6.8
+13,12,Yet another Name,2.7
+14,1234,No Name,3.14
+</pre>
+
+The shapefile is created now with gen2shp:
+
+<pre>
+bash-2.05b$ gen2shp test points < data.gen 
+bash-2.05b$ ls -l test.*
+-rw-rw-r--    1 jan      intevati      113 15. Nov 18:30 test.dbf
+-rw-rw-r--    1 jan      intevati      212 15. Nov 18:30 test.shp
+-rw-rw-r--    1 jan      intevati      132 15. Nov 18:30 test.shx
+</pre>
+
+The .dbf-file needs now to be replaced by a one that contains the
+attributes:
+
+First, change the name of the ID column to the column name used
+for the shapefile. You can check this with dbfdump (part of the
+<a href="http://shapelib.maptools.org/">shapelib</a> package):
+
+<pre>
+bash-2.05b$ dbfdump test.dbf | head -1
+    test-id 
+</pre>
+
+<pre>
+bash-2.05b$ cat data.att
+#test-id,Value1,Name,Value2
+8,42,A Name,6.8
+13,12,Yet another Name,2.7
+14,1234,No Name,3.14
+</pre>
+
+Now create the dbf-file with <a href="http://www.usf.uni-osnabrueck.de/~fkoorman/software/dbftools.en.html">txt2dbf</a>:
+
+<pre>
+bash-2.05b$ txt2dbf -v -I4 -I5 -C20 -R5.2 -d ,  data.att test.dbf
+txt2dbf 1.0.2, 09.09.1998 by Frank Koormann
+ data.att --> test.dbf
+ FIELDS:
+ NAME		TYPE	LENGTH	DECIMALS
+ test-id    	N	4	0
+ Value1      	N	5	0
+ Name        	C	20	0
+ Value2      	N	5	2
+ RECORDS:
+ [1] [2] [3]
+ 3 Records written into test.dbf
+</pre>
+
+There are many, many other ways to establish what is demonstrated here.
+
+	<p align="right">
+	2004/12/20 (secured via <a href="http://web.archive.org/web/20110716144136/http://intevation.de/~jan/gen2shp/gen2shp.html">web.archive.org/web/20110716144136/http://intevation.de/~jan/gen2shp/gen2shp.html</a> , some links replaced.)
+	</td>
+
+</html>
