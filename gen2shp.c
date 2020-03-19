@@ -210,7 +210,7 @@ static void GeneratePoints (	FILE *fp,
 	char * dstr;		/* tmp variable needed to find out substrings */
 	int rec = 0;		/* Counter for records */
 
-	while (getline(fp, linebuf) != EOF) {
+	while (get_line(fp, linebuf) != EOF) {
 		if (CASE_INSENSITIVE_STR_CMP(linebuf, "end") == 0) {
 			DEBUG_OUT("'end' detected\n");
 			break;
@@ -291,7 +291,7 @@ static void GenerateLines (	FILE *fp,
 	int coord = 0;		/* Counter for coordinates */
 
 	/* loop lines */
-	while (getline(fp, linebuf) != EOF) {
+	while (get_line(fp, linebuf) != EOF) {
 		if (CASE_INSENSITIVE_STR_CMP(linebuf, "end") == 0) {
 			DEBUG_OUT("final 'end' detected\n");
 			break;
@@ -305,7 +305,7 @@ static void GenerateLines (	FILE *fp,
 		coord = 0;
 
 		/* loop coordinates of line 'id' */
-		while (getline(fp, linebuf) != EOF) {
+		while (get_line(fp, linebuf) != EOF) {
 			if (CASE_INSENSITIVE_STR_CMP(linebuf, "end") == 0) {
 				DEBUG_OUT("a lines 'end' detected\n");
 				break;
@@ -351,7 +351,7 @@ static void GeneratePolygons (	FILE *fp,
 	int coord = 0;		/* Counter for coordinates */
 
 	/* loop polygons */
-	while (getline(fp, linebuf) != EOF) {
+	while (get_line(fp, linebuf) != EOF) {
 		if (CASE_INSENSITIVE_STR_CMP(linebuf, "end") == 0) {
 			DEBUG_OUT("final 'end' detected\n");
 			break;
@@ -423,7 +423,7 @@ static void GeneratePolygons (	FILE *fp,
 		}
 
 		/* loop coordinates of polygon 'id' */
-		while (getline(fp, linebuf) != EOF) {
+		while (get_line(fp, linebuf) != EOF) {
 			if (CASE_INSENSITIVE_STR_CMP(linebuf, "end") == 0) {
 				DEBUG_OUT("an 'end' detected\n");
 				break;

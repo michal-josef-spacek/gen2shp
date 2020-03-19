@@ -11,7 +11,7 @@
  *
  * Description: header of utils.c
  *	collection of useful functions:
- *	- getline
+ *	- get_line
  *	- do_nothing	
  *	- tabtok
  *	explanations see below.
@@ -32,9 +32,9 @@
 
 /* function declaration ------------------------------------------------*/
 
-/* getline: reads a line (limited by \n) out of stream fp, returns last 
+/* get_line: reads a line (limited by \n) out of stream fp, returns last 
  * char, esp eof							*/
-int getline(FILE *fp, char s[]);
+int get_line(FILE *fp, char s[]);
 
 /* do_nothing: dto.							*/
 void do_nothing( void );
