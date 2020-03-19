@@ -3,12 +3,6 @@
  */
 
 /* 
- * $Source: /home/freegis/jail/freegisrepository/gen2shp/utils.h,v $
- * 
- * $Author: jan $
- * 
- * $Revision: 1.1 $
- *
  * Description: header of utils.c
  *	collection of useful functions:
  *	- get_line

@@ -1,6 +1,4 @@
 /* 
- * $Id: gen2shp.c,v 1.12 2002/10/10 19:12:44 jan Exp $
- *
  * Copyright (C) 1999-2002 by Jan-Oliver Wagner <jan@intevation.de>
  * 
  *    This program is free software; you can redistribute it and/or

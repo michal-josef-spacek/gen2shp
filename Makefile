@@ -1,5 +1,3 @@
-# $Id: Makefile,v 1.6 2002/03/11 13:34:24 jan Exp $
-
 # add -DWITH_STRICMP if you are compiling i.e. with MS VC
 # add -DDEBUG if you want lots of debugging infos
 CFLAGS=

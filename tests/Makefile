@@ -1,5 +1,3 @@
-# $Id: Makefile,v 1.1 2002/01/24 17:16:38 jan Exp $
-
 all:
 	rm -f pnttest.dbf pnttest.shp pnttest.shx
 	../gen2shp pnttest points < pnttest.gen

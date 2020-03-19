@@ -3,19 +3,12 @@
  */
 
 /*
- * $Source: /home/freegis/jail/freegisrepository/gen2shp/utils.c,v $
- * 
- * $Author: jan $
- * 
- * $Revision: 1.1 $
- *
  * Description: utils.c
  *	collection of useful functions:
  *	- get_line
  *	- do_nothing	
  *	- tabtok
  *	explanations see below. *
- *
  */
 
 #include "utils.h"
