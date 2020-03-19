@@ -21,7 +21,7 @@
 
 #include <string.h>
 
-#include <libshp/shapefil.h>
+#include <shapefil.h>
 
 #include "utils.h"
 
